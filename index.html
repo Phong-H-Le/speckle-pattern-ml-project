@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!-- Structure adapted from https://cs.nyu.edu/~deigen/depth/ and https://www.deepimaging.io/BME548_2024S/WanWang/ML_final_project.html -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speckle Patterns: Classifying &amp; Reconstruction</title>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf9f6;
+      --ink: #1a1a1a;
+      --mid: #4a4a4a;
+      --light: #888;
+      --accent: #1a3a5c;
+      --accent2: #8b4513;
+      --rule: #d4d0c8;
+      --card: #f2f0eb;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.65;
+    }
+
+    /* ── Header band ── */
+    .site-header {
+      background: var(--accent);
+      color: #fff;
+      text-align: center;
+      padding: 14px 24px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* ── Main container ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 52px 24px 80px;
+    }
+
+    /* ── Title block ── */
+    .title-block {
+      text-align: center;
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 36px;
+      margin-bottom: 36px;
+    }
+
+    .title-block h1 {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: clamp(1.7rem, 4vw, 2.5rem);
+      font-weight: 600;
+      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-style: italic;
+      font-size: 1.15rem;
+      color: var(--mid);
+      margin-bottom: 22px;
+    }
+
+    .authors {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .authors span { margin: 0 18px; }
+
+    .affil {
+      font-size: 0.82rem;
+      color: var(--light);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.04em;
+      margin-bottom: 24px;
+    }
+
+    .links-row {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 20px;
+      border: 1.5px solid var(--accent);
+      border-radius: 3px;
+      color: var(--accent);
+      text-decoration: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background 0.18s, color 0.18s;
+    }
+    .btn:hover { background: var(--accent); color: #fff; }
+    .btn.filled { background: var(--accent); color: #fff; }
+    .btn.filled:hover { background: #0f2640; }
+
+    /* ── Teaser figure ── */
+    .teaser {
+      margin: 0 0 40px;
+      text-align: center;
+    }
+    .teaser img {
+      width: 100%;
+      max-width: 760px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+    }
+    .teaser figcaption {
+      font-size: 0.82rem;
+      color: var(--light);
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    /* ── Abstract ── */
+    .abstract {
+      background: var(--card);
+      border-left: 3px solid var(--accent);
+      padding: 24px 28px;
+      margin-bottom: 44px;
+      border-radius: 0 3px 3px 0;
+    }
+    .abstract p {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 1.08rem;
+      color: var(--ink);
+      line-height: 1.75;
+    }
+
+    /* ── Section headings ── */
+    h2 {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 8px;
+      margin: 44px 0 20px;
+    }
+
+    /* ── Downloads section ── */
+    .downloads {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .dl-group h3 {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--light);
+      margin-bottom: 10px;
+    }
+    .dl-group ul { list-style: none; }
+    .dl-group ul li { margin-bottom: 7px; }
+    .dl-group ul li a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.92rem;
+      border-bottom: 1px dashed var(--rule);
+      padding-bottom: 1px;
+      transition: border-color 0.15s;
+    }
+    .dl-group ul li a:hover { border-color: var(--accent); }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 60px;
+      border-top: 1px solid var(--rule);
+      padding-top: 20px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--light);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Inline highlight ── */
+    .hl { color: var(--accent); font-weight: 500; }
+    .hl2 { color: var(--accent2); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  BME 548 &mdash; Machine Learning &amp; Imaging &nbsp;|&nbsp; Duke University &nbsp;|&nbsp; Spring 2026
+</header>
+
+<div class="container">
+
+  <!-- ── Title ── -->
+  <div class="title-block">
+    <h1>Speckle Patterns: Classifying &amp; Reconstruction</h1>
+    <p class="subtitle">Learning to See Through Scattering Media with Deep Neural Networks</p>
+    <p class="authors">
+      <span>Phong Le</span>
+    </p>
+    <p class="affil">
+      Duke University &nbsp;|&nbsp; Advised by Dr. Roarke Horstmeyer
+    </p>
+    <div class="links-row">
+      <a class="btn filled" href="my_paper.pdf">&#128196; Paper PDF</a>
+      <a class="btn" href="speckle_classification.ipynb">&#128214; Classification Notebook</a>
+      <a class="btn" href="speckle_reconstruction.ipynb">&#128214; Reconstruction Notebook</a>
+    </div>
+  </div>
+
+  <!-- ── Teaser figure ── -->
+  <figure class="teaser">
+    <img src="figure_1.png" alt="Teaser figure showing speckle classification and LED illumination design workflow">
+    <figcaption>
+      Figure 1. Learned illumination design for speckle-based classification. A CNN trained end-to-end selects just 2 LEDs (right) to match the performance of 29-image Fourier ptychography (center), far exceeding naive bright-field imaging (left).
+    </figcaption>
+  </figure>
+
+  <!-- ── Abstract ── -->
+  <section>
+    <h2>Abstract</h2>
+    <div class="abstract">
+      <p>
+        When coherent laser light scatters through a disordered medium, it produces a speckle pattern&mdash;an apparently random interference image that nevertheless encodes rich information about the original scene. This project investigates whether deep neural networks can decode that hidden information for two distinct tasks: <span class="hl">digit classification</span> and <span class="hl">image reconstruction</span>. Using the Rice DSP Real Transmission Matrix Dataset across three scattering media (AmpSLM 16&times;16, PhaseSLM 40&times;40, and AmpSLM 64&times;64), we model the physical forward process as a complex transmission matrix and train both a CNN classifier and a U-Net reconstructor on the resulting intensity patterns. Classification achieves <span class="hl">~95% accuracy</span> even at realistic noise levels (SNR 20 dB), while U-Net reconstruction yields <span class="hl2">PSNR &asymp; 25.5 dB / SSIM &asymp; 0.88</span>. Critically, we find that neither approach generalizes across transmission matrices&mdash;each scattering medium defines a unique forward mapping, and changing the medium collapses performance to near chance. These results confirm that speckle is not random noise but structured, learnable information, while also revealing the fundamental challenge of medium-specific training in practical sensing systems.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Downloads ── -->
+  <section>
+    <h2>Paper &amp; Code</h2>
+    <div class="downloads">
+      <div class="dl-group">
+        <h3>Paper</h3>
+        <ul>
+          <li><a href="my_paper.pdf">&#8594; Full Paper PDF</a></li>
+        </ul>
+      </div>
+      <div class="dl-group">
+        <h3>Code</h3>
+        <ul>
+          <li><a href="speckle_classification.ipynb">&#8594; Classification Notebook (.ipynb)</a></li>
+          <li><a href="speckle_reconstruction.ipynb">&#8594; Reconstruction Notebook (.ipynb)</a></li>
+        </ul>
+      </div>
+      <div class="dl-group">
+        <h3>Data</h3>
+        <ul>
+          <li><a href="https://rice.edu/" target="_blank">&#8594; Rice DSP Real TM Dataset (external)</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<footer>
+  BME 548 &mdash; Machine Learning &amp; Imaging &nbsp;|&nbsp; Phong Le &amp; Dr. Roarke Horstmeyer &nbsp;|&nbsp; Duke University &nbsp;|&nbsp; May 2026
+</footer>
+
+</body>
+</html>
